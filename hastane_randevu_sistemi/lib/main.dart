@@ -4,15 +4,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/register_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/appointment_list_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/hospital_list_screen.dart'; // Import HospitalListScreen
+import 'screens/home_screen.dart'; // Ana sayfayı içe aktar
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('Firebase başarıyla başlatıldı');
+  } catch (e) {
+    print('Firebase başlatma hatası: $e');
+  }
   runApp(const MyApp());
 }
 
@@ -23,13 +26,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hastane Randevu Sistemi',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        useMaterial3: true,
       ),
-      initialRoute: '/',
+      home: const AuthGate(),
       routes: {
-        '/': (context) =>
-            const AuthGate(), // AuthGate'i başlangıç olarak ayarla
         '/register': (context) => const RegisterScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
@@ -46,55 +49,16 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
         if (snapshot.hasData) {
           return const HomeScreen();
-        } else {
-          return const LoginScreen();
         }
+        
+        return const LoginScreen();
       },
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hastane Randevu Sistemi'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HospitalListScreen(),
-                  ),
-                );
-              },
-              child: const Text('Hastaneleri Listele'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AppointmentListScreen(),
-                  ),
-                );
-              },
-              child: const Text('Randevularımı Gör'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
